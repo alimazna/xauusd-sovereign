@@ -1,0 +1,150 @@
+name: XAUUSD Sovereign CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+  pull_request:
+    branches:
+      - main
+      - master
+
+
+jobs:
+
+  build-linux:
+
+    name: Linux Build And Test
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+
+          sudo apt install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            curl \
+            libcurl4-openssl-dev \
+            python3
+
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DXAUUSD_BUILD_UI=OFF
+
+
+      - name: Build
+        run: |
+          cmake --build build --parallel
+
+
+      - name: Run Tests
+        run: |
+          ctest \
+            --test-dir build \
+            --output-on-failure \
+            --parallel 2
+
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+
+        with:
+          name: XAUUSD-Sovereign-Linux
+
+          path: |
+            build/
+
+
+
+  build-windows:
+
+    name: Windows Release Build
+    runs-on: windows-latest
+
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+
+      - name: Install Dependencies
+        shell: pwsh
+        run: |
+
+          choco install cmake ninja vcpkg -y
+
+          vcpkg install curl:x64-windows
+
+
+
+      - name: Configure CMake
+        shell: pwsh
+        run: |
+
+          cmake -S . -B build `
+            -A x64 `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
+            -DXAUUSD_BUILD_UI=OFF
+
+
+
+      - name: Build
+        shell: pwsh
+        run: |
+
+          cmake --build build `
+            --config Release `
+            --parallel
+
+
+
+      - name: Run Tests
+        shell: pwsh
+        run: |
+
+          ctest `
+            --test-dir build `
+            -C Release `
+            --output-on-failure `
+            --parallel 2
+
+
+
+      - name: Prepare Release Package
+        shell: pwsh
+        run: |
+
+          mkdir release
+
+          Copy-Item build/Release/*.exe release/ -ErrorAction SilentlyContinue
+
+          Copy-Item build/Release/*.dll release/ -ErrorAction SilentlyContinue
+
+
+
+      - name: Upload Windows Release
+        uses: actions/upload-artifact@v4
+
+        with:
+
+          name: XAUUSD-Sovereign-Windows
+
+          path: |
+            release/

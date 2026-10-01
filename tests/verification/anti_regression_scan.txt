@@ -1,0 +1,9 @@
+tick uses time_msc: PASS
+strict side guard: PASS
+OrderCheck before live order send: PASS
+Market Execution RETURN fallback blocked: PASS
+all four command APIs use targeted routing: PASS
+server has sequence replay guard: PASS
+server has authenticated client routing: PASS
+transaction correlation exists: PASS
+All 8 anti-regression checks passed.

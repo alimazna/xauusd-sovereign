@@ -1,0 +1,13 @@
+#include "CandidateComparator.h"
+#include "Clock.h"
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cmath>
+#include <string>
+#include <utility>
+namespace xauusd::sovereign {
+namespace {constexpr double kComparisonEpsilon=1e-9;EntityId hash_ids(const std::vector<EntityId>&ids){std::uint64_t h=14695981039346656037ULL;for(const auto&id:ids){for(const auto byte:id.bytes()){h^=static_cast<std::uint64_t>(byte);h*=1099511628211ULL;}}std::array<std::uint8_t,16>out{};for(std::size_t i=0;i<8;++i){out[i]=static_cast<std::uint8_t>((h>>(i*8))&0xFF);out[i+8]=out[i];}return EntityId{out};}const char*outcome_text(ComparisonOutcome outcome){switch(outcome){case ComparisonOutcome::BETTER:return "BETTER";case ComparisonOutcome::EQUAL:return "EQUAL";case ComparisonOutcome::WORSE:return "WORSE";case ComparisonOutcome::INCONCLUSIVE:return "INCONCLUSIVE";case ComparisonOutcome::INCOMPARABLE:return "INCOMPARABLE";}return "INCOMPARABLE";}}
+ComparisonResult CandidateComparator::compare(const EntityId&control_id,const EntityId&candidate_id,double control_metric,double candidate_metric)const{ComparisonResult result;result.control_id=control_id;result.candidate_id=candidate_id;result.primary_metric_control=control_metric;result.primary_metric_candidate=candidate_metric;result.compared_at=detail::now_timestamp();if(!std::isfinite(control_metric)||!std::isfinite(candidate_metric)){result.outcome=ComparisonOutcome::INCOMPARABLE;result.primary_delta=0.0;result.rationale="non-finite metric";return result;}result.primary_delta=candidate_metric-control_metric;if(result.primary_delta>-kComparisonEpsilon&&result.primary_delta<kComparisonEpsilon)result.outcome=ComparisonOutcome::EQUAL;else if(candidate_metric>control_metric)result.outcome=ComparisonOutcome::BETTER;else result.outcome=ComparisonOutcome::WORSE;result.rationale=outcome_text(result.outcome);return result;}
+CandidateComparison CandidateComparator::compare_all(const EntityId&control_id,const std::vector<EntityId>&candidate_ids,const std::vector<double>&candidate_metrics,double control_metric)const{CandidateComparison comparison;comparison.comparison_id=hash_ids(candidate_ids);comparison.completed_at=detail::now_timestamp();if(candidate_ids.size()!=candidate_metrics.size()){comparison.summary="INCOMPARABLE: candidate id/metric count mismatch";return comparison;}comparison.results.reserve(candidate_ids.size());for(std::size_t i=0;i<candidate_ids.size();++i)comparison.results.push_back(compare(control_id,candidate_ids[i],control_metric,candidate_metrics[i]));comparison.summary="Compared "+std::to_string(comparison.results.size())+" candidate(s) against control.";return comparison;}
+} // namespace xauusd::sovereign

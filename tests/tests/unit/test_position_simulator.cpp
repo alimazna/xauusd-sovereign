@@ -1,0 +1,3 @@
+#include "TestHelpers.h"
+#include "PositionSimulator.h"
+int main(){PositionSimulator e;SimulatedFill f{};f.state=FillState::FILLED;f.direction=SignalDirection::LONG;f.volume=1;f.fill_time=Timestamp{100};f.fill_price=2000;f.proposal_id=test_id(3);f.signal_id=test_id(2);f.fill_id=test_id(4);f.stop_loss=1990;f.take_profit=2010;f.tick_size=.01;f.tick_value=1;f.commission=3;auto p=e.open(f);assert(p.is_open);assert(p.stop_loss==1990&&p.take_profit==2010);Tick t{Timestamp{200},Timestamp{210},2011,2011.1,2011.05,.1,0};assert(e.update(p,t));assert(!p.is_open);assert(p.net_pnl>0);assert(p.closed_at.value()==200);assert(p.close_reason=="TP");return 0;}

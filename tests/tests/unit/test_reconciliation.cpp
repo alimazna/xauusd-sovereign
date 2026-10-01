@@ -1,0 +1,3 @@
+#include "TestHelpers.h"
+#include "ReconciliationEngine.h"
+int main(){ReconciliationEngine e(.5);Signal s{};s.signal_id=test_id(4);s.decision_id=test_id(5);s.direction=SignalDirection::LONG;s.entry_reference=2000;s.invalidating_price=1990;s.triggered_at=Timestamp{100};Position p{};p.position_id=test_id(6);p.signal_id=s.signal_id;p.proposal_id=test_id(7);p.fill_id=test_id(8);p.direction=SignalDirection::LONG;p.requested_price=2000;p.entry_price=2000.1;p.slippage=.1;p.stop_loss=1990;p.take_profit=2015;p.volume=.1;p.tick_size=.01;p.tick_value=1;p.opened_at=Timestamp{100};p.closed_at=Timestamp{200};p.exit_price=2015;auto r=e.reconcile(s,p);assert(r.matches);return 0;}
